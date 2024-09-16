@@ -15,10 +15,10 @@ Notas:
 ## Introdução
 Docker é uma plataforma que permite criar, testar e executar aplicações em "containers". Um container é como uma pequena máquina virtual, mas muito mais leve, porque compartilha o mesmo sistema operacional com outros containers, utilizando apenas os recursos necessários para rodar uma aplicação específica.
 
-![Docker.png](images\Docker.png)
+![Docker.png](images/Docker.png)
 ### Aqui estão os conceitos básicos:
 
-![Docker Objects.png](images\Docker_Objects.png)
+![Docker Objects.png](images/Docker_Objects.png)
 
 1. **Dockerfile**: Arquivo de texto com comandos e instruções que ajuda a criar as imagens e especifíca o que a aplicação precisa para funcionar, automatiza a criação do ambiente.
 
@@ -41,7 +41,7 @@ Docker é uma plataforma que permite criar, testar e executar aplicações em "c
 
 ## Funcionamento do docker
 
-![Docker_Architecture.png](images\Docker_Architecture.png)
+![Docker_Architecture.png](images/Docker_Architecture.png)
 
 O Docker funciona como uma plataforma de virtualização leve baseada em contêineres, permitindo que desenvolvedores empacotem, distribuam e executem aplicativos isolados do sistema operacional subjacente. Aqui está uma visão geral de como o Docker funciona:
 
