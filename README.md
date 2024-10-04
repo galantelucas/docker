@@ -143,8 +143,10 @@ docker build -t myapp:1.0 .
 
 Para verificar a imagem que foi construída pode ser executado o comando "docker images"
 
-REPOSITORY          TAG                 IMAGE ID            CREATED             SIZE
-myapp               1.0                 abc123456789        2 minutes ago       120MB
+| REPOSITORY | TAG  | IMAGE ID     | CREATED           | SIZE  |
+|------------|------|--------------|-------------------|-------|
+| myapp      | 1.0  | abc123456789 | 2 minutes ago     | 120MB |
+
 
 #### Executando o Container:
 ```
@@ -181,54 +183,154 @@ Para verificar o container executado pode usar o comando "docker ps", vai mostra
     - O nome do container. Se você não especificar um nome, o Docker gera um nome aleatório. No exemplo, `my-container`.
 
 ## docker-compose.yaml
+### Comandos Relevantes com `docker-compose up` e `docker-compose down`
+
+### Subir os serviços (básico):
+```bash
+docker-compose up
 ```
+Este comando sobe todos os serviços definidos no arquivo `docker-compose.yaml`.
+
+### Rodar em segundo plano (detached mode):
+```bash
+docker-compose up -d
+```
+Executa os serviços em segundo plano, permitindo que o terminal fique livre para outros comandos.
+
+### Forçar o rebuild das imagens:
+```bash
+docker-compose up --build
+```
+Força a recompilação das imagens antes de subir os serviços, útil quando você altera o Dockerfile ou o código da aplicação.
+
+### Recriar contêineres se necessário:
+```bash
+docker-compose up --force-recreate
+```
+Recria os contêineres mesmo se não houver alterações nos serviços ou volumes.
+
+### Especificar um serviço:
+```bash
+docker-compose up web
+```
+Sobe apenas o serviço especificado, neste caso, `web`. Você pode usar o nome de qualquer serviço definido no `docker-compose.yaml`.
+
+## Comandos Relevantes com `docker-compose down`:
+
+### Derrubar todos os serviços e remover contêineres:
+```bash
+docker-compose down
+```
+Para e remove todos os contêineres criados com o `docker-compose up`.
+
+### Remover volumes junto com os contêineres:
+```bash
+docker-compose down -v
+```
+Remove também os volumes associados aos serviços, como volumes de dados do banco de dados. Use com cuidado, pois isso pode resultar na perda de dados armazenados nos volumes.
+
+### Remover imagens:
+```bash
+docker-compose down --rmi all
+```
+Remove também as imagens usadas pelos serviços. Isso é útil para liberar espaço, mas o próximo `up` terá que recriar todas as imagens.
+
+### Remover redes:
+```bash
+docker-compose down --remove-orphans
+```
+Remove contêineres de serviços que não estão mais definidos no `docker-compose.yaml`, mas que ainda estão rodando.
+
+## Outros Comandos Úteis:
+
+### Visualizar os logs em tempo real:
+```bash
+docker-compose logs -f
+```
+Segue os logs de todos os serviços, permitindo que você veja o que está acontecendo em tempo real.
+
+### Parar todos os serviços sem removê-los:
+```bash
+docker-compose stop
+```
+Para os serviços, mas não remove os contêineres ou redes, permitindo retomar com `docker-compose start`.
+
+### Reiniciar serviços:
+```bash
+docker-compose restart
+```
+Reinicia os serviços sem derrubar ou recriar os contêineres.
+
+
+### Arquivo yaml
+```yaml
 version: '3.8'
 
 services:
   web:
-    image: node:14
-    container_name: my_node_app
-    working_dir: /usr/src/app
+    image: node:14  # (Obrigatório) Define a imagem Node.js versão 14
+    container_name: my_node_app  # (Opcional) Nome do contêiner
+    working_dir: /usr/src/app  # (Opcional) Diretório de trabalho no contêiner
     volumes:
-      - ./:/usr/src/app
+      - ./:/usr/src/app  # (Opcional) Monta o diretório atual no contêiner
     ports:
-      - "3000:3000"
+      - "3000:3000"  # (Obrigatório) Exposição da porta 3000
     environment:
-      - NODE_ENV=development
-    command: "npm start"
+      - NODE_ENV=development  # (Opcional) Define a variável de ambiente
+    command: "npm start"  # (Obrigatório) Comando para iniciar o app Node.js
     depends_on:
-      - db
+      db:
+        condition: service_healthy  # (Opcional) Aguarda o serviço 'db' estar saudável antes de iniciar
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://localhost:3000 || exit 1"]  # (Opcional) Verificação de saúde do serviço
+      interval: 30s  # (Opcional) Intervalo entre checagens
+      timeout: 10s  # (Opcional) Tempo limite para resposta
+      retries: 3  # (Opcional) Tentativas antes de marcar como unhealthy
+    restart: always  # (Opcional) Reinicia automaticamente em caso de falha
 
   db:
-    image: postgres:13
-    container_name: my_postgres_db
+    image: postgres:13  # (Obrigatório) Define a imagem PostgreSQL versão 13
+    container_name: my_postgres_db  # (Opcional) Nome do contêiner
     environment:
-      POSTGRES_USER: myuser
-      POSTGRES_PASSWORD: mypassword
-      POSTGRES_DB: mydatabase
+      POSTGRES_USER: myuser  # (Obrigatório) Nome de usuário do banco de dados
+      POSTGRES_PASSWORD: mypassword  # (Obrigatório) Senha do banco de dados
+      POSTGRES_DB: mydatabase  # (Obrigatório) Nome do banco de dados
     volumes:
-      - postgres_data:/var/lib/postgresql/data
+      - postgres_data:/var/lib/postgresql/data  # (Opcional) Volume para persistência de dados
     ports:
-      - "5432:5432"
+      - "5432:5432"  # (Obrigatório) Exposição da porta 5432 para o banco
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U myuser"]  # (Opcional) Verificação de saúde do PostgreSQL
+      interval: 30s  # (Opcional) Intervalo entre checagens
+      timeout: 10s  # (Opcional) Tempo limite para resposta
+      retries: 5  # (Opcional) Tentativas antes de marcar como unhealthy
+    restart: always  # (Opcional) Reinicia automaticamente em caso de falha
 
 volumes:
-  postgres_data:
+  postgres_data:  # (Opcional) Volume nomeado para armazenamento de dados
 ```
+
 ### Explicação:
 
-- **version**: Define a versão do Compose, neste caso, 3.8.
-- **services**: Define os serviços que serão executados.
-    - **web**: É o serviço da aplicação Node.js.
-        - A imagem é baseada no Node.js versão 14.
-        - Monta o diretório atual (`./`) no contêiner em `/usr/src/app`.
-        - Expõe a porta 3000.
-        - Define a variável de ambiente `NODE_ENV` como `development`.
-        - Depende do banco de dados (`db`) para garantir que o serviço de banco de dados esteja ativo antes do Node.js.
-    - **db**: É o serviço PostgreSQL.
-        - Configura o usuário, senha e nome do banco de dados.
-        - Usa um volume nomeado (`postgres_data`) para persistir os dados do banco de dados.
-        - Expõe a porta 5432 para conexão ao banco de dados.
-- **volumes**: Define um volume chamado `postgres_data` para armazenar os dados do banco de dados fora do contêiner, mantendo-os persistentes.
-## Documentação
+#### Obrigatório:
+- **version**: A versão do Compose (3.8 neste caso) é necessária para definir a sintaxe do arquivo.
+- **services**:
+  - **image**: A imagem para cada serviço é obrigatória para definir o ambiente de execução.
+  - **ports**: Definir as portas mapeadas é necessário para expor os serviços externamente.
+  - **command**: O comando de execução (no caso do Node.js, `npm start`).
+  - **environment (db)**: Nome de usuário, senha e banco de dados são obrigatórios para configurar o serviço PostgreSQL.
+
+#### Opcional:
+- **container_name**: Define um nome para o contêiner, caso não queira que o Docker gere um automaticamente.
+- **volumes**: Montar volumes é opcional, mas recomendado para persistir dados fora dos contêineres.
+- **depends_on**: Controla a ordem de inicialização dos serviços. O `condition: service_healthy` garante que o serviço Node.js só inicie quando o PostgreSQL estiver pronto.
+- **healthcheck**: Verifica a saúde dos serviços periodicamente para reiniciá-los em caso de falha.
+- **restart**: A política de reinicialização garante que os serviços sejam reiniciados automaticamente após falhas.
+- **environment (web)**: Variáveis de ambiente, como `NODE_ENV`, podem ser configuradas para alterar o comportamento da aplicação.
+
+## Documentação Auxiliar
 https://docs.docker.com/
+
 https://praveendandu24.medium.com/understanding-docker-architecture-an-in-depth-overview-of-docker-components-and-usage-f1a26bd217f9
+
+https://www.youtube.com/watch?v=ntbpIfS44Gw
